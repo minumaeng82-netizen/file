@@ -19,28 +19,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* 파기(파쇄) 애니메이션 효과 */
-    @keyframes shredOut {
-      0% {
-        transform: scale(1) translateY(0) rotate(0deg);
-        opacity: 1;
-        filter: blur(0px);
-      }
-      35% {
-        transform: scale(0.96) translateY(-10px) rotate(-1.5deg);
-        opacity: 0.9;
-      }
-      100% {
-        transform: scale(0.4) translateY(140px) rotate(12deg);
-        opacity: 0;
-        filter: blur(12px);
-      }
-    }
-
-    .shred-animation {
-      animation: shredOut 0.85s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
-    }
-
     @keyframes pulseRing {
       0% { transform: scale(0.95); opacity: 0.7; }
       70% { transform: scale(1.12); opacity: 0; }
@@ -98,13 +76,12 @@
           별도의 앱 설치 없이 스티커로 만들 사진을 태블릿으로 보낼 수 있습니다.
         </p>
 
-        <!-- 보안 안심 배지 -->
-        <div class="w-full max-w-md bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mt-4 flex items-start gap-3 text-left">
-          <div class="text-emerald-600 text-xl mt-0.5">🛡️</div>
+        <!-- 개인정보 안내 배지 -->
+        <div class="w-full max-w-md bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4 flex items-center gap-3 text-left">
+          <div class="text-amber-600 text-xl">📌</div>
           <div>
-            <h3 class="text-sm font-bold text-emerald-900">개인정보 안심 보호 모드 작동 중</h3>
-            <p class="text-xs text-emerald-700 mt-0.5 leading-relaxed">
-              서버에 사진이 저장되지 않고, 태블릿에 바로 전달됩니다
+            <p class="text-sm font-bold text-amber-900">
+              체험을 마치면 태블릿에서 사진을 지워주시기 바랍니다.
             </p>
           </div>
         </div>
@@ -115,20 +92,15 @@
         </div>
       </div>
 
-      <!-- [상태 B] 사진 수신 완료 및 출력/파기 화면 -->
+      <!-- [상태 B] 사진 수신 완료 화면 -->
       <div id="tablet-received" class="hidden flex flex-col items-center text-center">
         <div class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-bold mb-4">
           <span>✨ 사진이 안전하게 도착했습니다!</span>
         </div>
 
         <!-- 수신된 이미지 미리보기 카드 -->
-        <div id="preview-card" class="relative w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-6">
+        <div class="relative w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-6">
           <img id="received-image" src="" alt="수신된 사진" class="w-full max-h-80 object-contain mx-auto bg-slate-800" />
-          <div id="shred-overlay" class="hidden absolute inset-0 bg-rose-600/90 backdrop-blur-sm flex flex-col items-center justify-center text-white p-4">
-            <span class="text-4xl mb-2">🗑️</span>
-            <p class="font-bold text-lg">사진 데이터 영구 파기 중...</p>
-            <p class="text-xs text-rose-100 mt-1">메모리에서 흔적 없이 삭제됩니다</p>
-          </div>
         </div>
 
         <!-- 운영자 액션 버튼 -->
@@ -138,15 +110,16 @@
             <span>1. 태블릿에 사진 저장</span>
           </button>
 
-          <button id="btn-shred" class="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition">
-            <span class="text-lg">🔥</span>
-            <span>2. 사진 즉시 파기</span>
+          <button id="btn-next-photo" class="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition">
+            <span class="text-lg">🔄</span>
+            <span>2. 새로운 사진 받기</span>
           </button>
         </div>
 
-        <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+        <p class="text-xs text-slate-600 mt-4 leading-relaxed">
           ① <strong>[태블릿에 사진 저장]</strong> 후 <strong>Liene Photo 앱</strong>에서 스티커를 출력하세요.<br/>
-          ② 출력 후 체험자 앞에서 <strong>[사진 즉시 파기]</strong>를 누르면 다음 QR이 생성됩니다.
+          ② <strong>체험을 마치면 태블릿에서 사진을 지워주시기 바랍니다.</strong><br/>
+          ③ 다음 체험자를 위해 <strong>[새로운 사진 받기]</strong>를 눌러주세요.
         </p>
 
         <!-- 하단 기관 표기 -->
@@ -172,7 +145,7 @@
       <!-- 연결 상태 표시 -->
       <div id="mobile-status-box" class="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium flex items-center justify-center gap-2">
         <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-        <span id="mobile-status-text">부스 태블릿과 안전하게 연결 중...</span>
+        <span id="mobile-status-text">부스 태블릿과 연결 중...</span>
       </div>
 
       <!-- 사진 선택 영역 -->
@@ -199,19 +172,15 @@
           앞에 있는 태블릿 화면을 보며<br/>나만의 스티커를 꾸며보세요.
         </p>
 
-        <div id="mobile-destroyed-notice" class="hidden mt-5 p-3.5 rounded-2xl bg-slate-100 text-slate-700 text-xs font-semibold">
-          🔒 태블릿에서 사진 데이터가 안전하게 파기되었습니다.
-        </div>
-
         <button id="btn-send-another" class="mt-6 text-xs text-indigo-600 font-semibold underline">
           다른 사진 다시 보내기
         </button>
       </div>
 
-      <!-- 하단 보안 안내 & 기관명 -->
+      <!-- 하단 안내 & 기관명 -->
       <div class="mt-6 pt-4 border-t border-slate-100 text-center">
-        <p class="text-[11px] text-slate-400 leading-relaxed mb-2">
-          🔒 서버에 사진이 저장되지 않고, 태블릿에 바로 전달됩니다
+        <p class="text-[11px] text-slate-500 leading-relaxed mb-2">
+          📌 체험을 마치면 태블릿에서 사진을 지워주시기 바랍니다.
         </p>
         <p class="text-xs font-bold text-slate-500">문원 AI디지털 교육연구회</p>
       </div>
@@ -221,7 +190,7 @@
 
   <script>
     // =========================================================
-    // WebRTC 다중 STUN 서버 설정 (네트워크 연결 안정성 강화)
+    // WebRTC STUN + Metered TURN 서버 설정 (데이터 망 연결 안정화)
     // =========================================================
     const peerConfig = {
       debug: 1,
@@ -229,43 +198,34 @@
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun.cloudflare.com:3478' }
+          {
+            urls: 'turn:global.relay.metered.ca:80',
+            username: 'ab69cea6d2a3617c27f044c4',
+            credential: '6YrWgjFwoNWVWC4Q'
+          }
         ],
         iceCandidatePoolSize: 10
       }
     };
 
-    // URL 파라미터 확인 (?target=PEER_ID 가 있으면 체험자 스마트폰 모드)
     const urlParams = new URLSearchParams(window.location.search);
     const targetPeerId = urlParams.get('target');
 
-    // Web Audio API 간단한 효과음 생성기
-    function playSound(type) {
+    // 간단한 수신 효과음
+    function playSound() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-
-        if (type === 'receive') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-          osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
-          gain.gain.setValueAtTime(0.15, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.4);
-        } else if (type === 'shred') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(220, ctx.currentTime);
-          osc.frequency.linearRampToValueAtTime(60, ctx.currentTime + 0.45);
-          gain.gain.setValueAtTime(0.15, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.45);
-        }
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
       } catch (e) {}
     }
 
@@ -284,8 +244,6 @@
       const waitingSection = document.getElementById('tablet-waiting');
       const receivedSection = document.getElementById('tablet-received');
       const receivedImg = document.getElementById('received-image');
-      const previewCard = document.getElementById('preview-card');
-      const shredOverlay = document.getElementById('shred-overlay');
 
       function initTabletSession() {
         if (peer) {
@@ -294,15 +252,11 @@
         activeConn = null;
         currentImageDataUrl = null;
 
-        // UI 초기화
         waitingSection.classList.remove('hidden');
         receivedSection.classList.add('hidden');
-        previewCard.classList.remove('shred-animation');
-        shredOverlay.classList.add('hidden');
         badge.textContent = 'QR 생성 중...';
         badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-400/20 text-amber-100';
 
-        // 랜덤 세션 ID 생성 (매 체험마다 새로운 QR 발급)
         const randomId = 'booth-' + Math.random().toString(36).substring(2, 9);
         peer = new Peer(randomId, peerConfig);
 
@@ -310,11 +264,9 @@
           badge.textContent = '● 스캔 대기 중';
           badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-400/25 text-emerald-100';
 
-          // 현재 URL 기반 체험자 접속 링크 생성
           const baseUrl = window.location.href.split('?')[0];
           const connectUrl = `${baseUrl}?target=${id}`;
 
-          // QR 코드 렌더링
           const qrContainer = document.getElementById('qrcode');
           qrContainer.innerHTML = '';
           new QRCode(qrContainer, {
@@ -327,14 +279,20 @@
           });
         });
 
-        // 체험자 스마트폰 연결 수신
         peer.on('connection', (conn) => {
           activeConn = conn;
           badge.textContent = '📱 스마트폰 연결됨';
 
           conn.on('data', (payload) => {
             if (payload && payload.type === 'PHOTO' && payload.dataUrl) {
-              displayReceivedPhoto(payload.dataUrl, payload.name || 'sticker.jpg');
+              currentImageDataUrl = payload.dataUrl;
+              currentFileName = payload.name || 'sticker.jpg';
+              receivedImg.src = payload.dataUrl;
+
+              waitingSection.classList.add('hidden');
+              receivedSection.classList.remove('hidden');
+              badge.textContent = '✅ 사진 수신 완료';
+              playSound();
             }
           });
         });
@@ -351,18 +309,7 @@
         });
       }
 
-      function displayReceivedPhoto(dataUrl, fileName) {
-        currentImageDataUrl = dataUrl;
-        currentFileName = fileName;
-        receivedImg.src = dataUrl;
-
-        waitingSection.classList.add('hidden');
-        receivedSection.classList.remove('hidden');
-        badge.textContent = '✅ 사진 수신 완료';
-        playSound('receive');
-      }
-
-      // 1. 태블릿 갤러리(다운로드 폴더)에 저장
+      // 1. 태블릿 저장
       document.getElementById('btn-download').addEventListener('click', () => {
         if (!currentImageDataUrl) return;
         const link = document.createElement('a');
@@ -374,28 +321,13 @@
         document.body.removeChild(link);
       });
 
-      // 2. 사진 즉시 파기 및 다음 세션 초기화
-      document.getElementById('btn-shred').addEventListener('click', () => {
-        playSound('shred');
-        shredOverlay.classList.remove('hidden');
-        previewCard.classList.add('shred-animation');
-
-        // 체험자 스마트폰에도 파기 완료 신호 전송
-        if (activeConn && activeConn.open) {
-          try {
-            activeConn.send({ type: 'DESTROYED' });
-          } catch (e) {}
-        }
-
-        // 0.9초 애니메이션 후 메모리 비우고 새 QR 발급
-        setTimeout(() => {
-          receivedImg.src = '';
-          currentImageDataUrl = null;
-          initTabletSession();
-        }, 900);
+      // 2. 새로운 사진 받기 (다음 체험자 준비)
+      document.getElementById('btn-next-photo').addEventListener('click', () => {
+        receivedImg.src = '';
+        currentImageDataUrl = null;
+        initTabletSession();
       });
 
-      // 첫 세션 시작
       initTabletSession();
     }
 
@@ -410,7 +342,6 @@
       const uploadArea = document.getElementById('mobile-upload-area');
       const sentArea = document.getElementById('mobile-sent-area');
       const photoInput = document.getElementById('photo-input');
-      const destroyedNotice = document.getElementById('mobile-destroyed-notice');
 
       const mobilePeer = new Peer(peerConfig);
       let conn = null;
@@ -423,12 +354,6 @@
           statusBox.className = 'mb-6 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold flex items-center justify-center gap-2';
           statusText.textContent = '태블릿과 연결되었습니다! 사진을 선택하세요';
           uploadArea.classList.remove('opacity-50', 'pointer-events-none');
-        });
-
-        conn.on('data', (data) => {
-          if (data && data.type === 'DESTROYED') {
-            destroyedNotice.classList.remove('hidden');
-          }
         });
 
         conn.on('close', () => {
@@ -455,12 +380,11 @@
         statusText.textContent = '연결에 실패했습니다. 태블릿 QR을 다시 스캔해 주세요.';
       });
 
-      // 사진 선택 시 전송 전 최적의 해상도(최대 1600px)로 자동 리사이징하여 빠른 전송 보장
       photoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file || !conn || !conn.open) return;
 
-        statusText.textContent = '사진을 안전하게 전송하는 중...';
+        statusText.textContent = '사진을 전송하는 중...';
 
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -486,14 +410,12 @@
 
             const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
-            // 태블릿으로 직접 전송
             conn.send({
               type: 'PHOTO',
               name: file.name,
               dataUrl: compressedDataUrl
             });
 
-            // 전송 완료 UI 전환
             uploadArea.classList.add('hidden');
             sentArea.classList.remove('hidden');
             statusBox.classList.add('hidden');
@@ -503,11 +425,11 @@
         reader.readAsDataURL(file);
       });
 
-      // 다른 사진 다시 보내기
       document.getElementById('btn-send-another').addEventListener('click', () => {
         photoInput.value = '';
         sentArea.classList.add('hidden');
         uploadArea.classList.remove('hidden');
+        uploadArea.classList.remove('opacity-50', 'pointer-events-none');
         statusBox.classList.remove('hidden');
       });
     }
