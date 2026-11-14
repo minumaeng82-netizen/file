@@ -18,21 +18,6 @@
       background-color: #f8fafc;
       -webkit-tap-highlight-color: transparent;
     }
-
-    @keyframes pulseRing {
-      0% { transform: scale(0.95); opacity: 0.7; }
-      70% { transform: scale(1.12); opacity: 0; }
-      100% { transform: scale(1.12); opacity: 0; }
-    }
-
-    .pulse-ring::before {
-      content: '';
-      position: absolute;
-      inset: -8px;
-      border-radius: 9999px;
-      border: 3px solid #6366f1;
-      animation: pulseRing 2s infinite;
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 text-slate-800 select-none">
@@ -41,7 +26,6 @@
        1. 운영자 태블릿 모드 (기본 접속 화면)
   ========================================================== -->
   <div id="tablet-view" class="hidden w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden transition-all">
-    <!-- 상단 헤더 -->
     <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white flex items-center justify-between">
       <div>
         <div class="flex items-center gap-2">
@@ -49,7 +33,6 @@
           <span class="text-xs font-semibold tracking-wider uppercase text-indigo-100">Liene PixCut S1 Kiosk</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-bold mt-0.5">나만의 인생 스티커 만들기 체험 부스</h1>
-        <p class="text-xs sm:text-sm text-indigo-100 mt-1">앱 설치 없는 사진 전송 made by 문원 AI디지털 교육연구회</p>
       </div>
       <div class="text-right">
         <span id="connection-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm">
@@ -58,37 +41,23 @@
       </div>
     </div>
 
-    <!-- 메인 컨텐츠 영역 -->
     <div class="p-6 sm:p-10">
-      
       <!-- [상태 A] QR 코드 대기 화면 -->
       <div id="tablet-waiting" class="flex flex-col items-center text-center">
         <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-          📱 스마트폰 기본 카메라로 아래 QR코드를 스캔하세요
+          📱 부스 핫스팟 연결 후, 스마트폰 카메라로 QR을 스캔하세요
         </div>
 
-        <!-- QR 컨테이너 -->
         <div class="relative p-5 bg-white rounded-3xl shadow-lg border-2 border-indigo-100 mb-6">
           <div id="qrcode" class="w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center"></div>
         </div>
 
-        <p class="text-slate-600 text-sm sm:text-base max-w-md leading-relaxed mb-2">
-          별도의 앱 설치 없이 스티커로 만들 사진을 태블릿으로 보낼 수 있습니다.
+        <p class="text-slate-600 text-sm max-w-md mb-2">
+          별도의 앱 없이 사진을 태블릿으로 즉시 전송할 수 있습니다.
         </p>
 
-        <!-- 개인정보 안내 배지 -->
-        <div class="w-full max-w-md bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4 flex items-center gap-3 text-left">
-          <div class="text-amber-600 text-xl">📌</div>
-          <div>
-            <p class="text-sm font-bold text-amber-900">
-              체험을 마치면 태블릿에서 사진을 지워주시기 바랍니다.
-            </p>
-          </div>
-        </div>
-
-        <!-- 하단 기관 표기 -->
         <div class="mt-8 pt-4 border-t border-slate-100 w-full text-center">
-          <p class="text-sm font-bold text-slate-500 tracking-wide">문원 AI디지털 교육연구회</p>
+          <p class="text-sm font-bold text-slate-500">문원 AI디지털 교육연구회</p>
         </div>
       </div>
 
@@ -98,36 +67,23 @@
           <span>✨ 사진이 안전하게 도착했습니다!</span>
         </div>
 
-        <!-- 수신된 이미지 미리보기 카드 -->
         <div class="relative w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-6">
           <img id="received-image" src="" alt="수신된 사진" class="w-full max-h-80 object-contain mx-auto bg-slate-800" />
         </div>
 
-        <!-- 운영자 액션 버튼 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
           <button id="btn-download" class="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition">
-            <span class="text-lg">💾</span>
-            <span>1. 태블릿에 사진 저장</span>
+            <span>💾 태블릿에 사진 저장</span>
           </button>
-
           <button id="btn-next-photo" class="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition">
-            <span class="text-lg">🔄</span>
-            <span>2. 새로운 사진 받기</span>
+            <span>🔄 새로운 사진 받기</span>
           </button>
         </div>
 
-        <p class="text-xs text-slate-600 mt-4 leading-relaxed">
-          ① <strong>[태블릿에 사진 저장]</strong> 후 <strong>Liene Photo 앱</strong>에서 스티커를 출력하세요.<br/>
-          ② <strong>체험을 마치면 태블릿에서 사진을 지워주시기 바랍니다.</strong><br/>
-          ③ 다음 체험자를 위해 <strong>[새로운 사진 받기]</strong>를 눌러주세요.
-        </p>
-
-        <!-- 하단 기관 표기 -->
         <div class="mt-6 pt-4 border-t border-slate-100 w-full text-center">
-          <p class="text-sm font-bold text-slate-500 tracking-wide">문원 AI디지털 교육연구회</p>
+          <p class="text-sm font-bold text-slate-500">문원 AI디지털 교육연구회</p>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -142,48 +98,37 @@
     </div>
 
     <div class="p-6 text-center">
-      <!-- 연결 상태 표시 -->
       <div id="mobile-status-box" class="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium flex items-center justify-center gap-2">
         <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-        <span id="mobile-status-text">부스 태블릿과 연결 중...</span>
+        <span id="mobile-status-text">태블릿과 연결 중...</span>
       </div>
 
-      <!-- 사진 선택 영역 -->
       <div id="mobile-upload-area" class="opacity-50 pointer-events-none transition-opacity">
         <label for="photo-input" class="block w-full cursor-pointer">
           <div class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 rounded-3xl p-8 transition flex flex-col items-center justify-center">
-            <div class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center text-3xl shadow-md mb-4 pulse-ring relative">
+            <div class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center text-3xl shadow-md mb-4">
               📸
             </div>
             <p class="text-base font-bold text-slate-800">여기를 눌러 사진 선택하기</p>
-            <p class="text-xs text-slate-500 mt-1">앨범에서 스티커로 만들 사진 1장을 골라주세요</p>
+            <p class="text-xs text-slate-500 mt-1">앨범에서 사진 1장을 골라주세요</p>
           </div>
           <input id="photo-input" type="file" accept="image/*" class="hidden" />
         </label>
       </div>
 
-      <!-- 전송 완료 화면 -->
       <div id="mobile-sent-area" class="hidden py-6">
         <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-3">
           ✅
         </div>
         <h2 class="text-lg font-bold text-slate-800">전송이 완료되었습니다!</h2>
-        <p class="text-sm text-slate-600 mt-1 leading-relaxed">
-          앞에 있는 태블릿 화면을 보며<br/>나만의 스티커를 꾸며보세요.
-        </p>
+        <p class="text-sm text-slate-600 mt-1 mb-6">태블릿 화면을 확인해 주세요.</p>
 
-        <!-- 첫 화면(태블릿 QR 스캔 화면)으로 돌아가는 버튼 -->
-        <button id="btn-home" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition flex items-center justify-center gap-2">
-          <span>📱</span>
-          <span>부스 QR코드 스캔 화면으로 돌아가기</span>
+        <button id="btn-home" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition">
+          📱 부스 QR코드 스캔 화면으로 돌아가기
         </button>
       </div>
 
-      <!-- 하단 안내 & 기관명 -->
       <div class="mt-6 pt-4 border-t border-slate-100 text-center">
-        <p class="text-[11px] text-slate-500 leading-relaxed mb-2">
-          📌 체험을 마치면 태블릿에서 사진을 지워주시기 바랍니다.
-        </p>
         <p class="text-xs font-bold text-slate-500">문원 AI디지털 교육연구회</p>
       </div>
     </div>
@@ -191,29 +136,9 @@
 
 
   <script>
-    // =========================================================
-    // WebRTC STUN + Metered TURN 서버 설정
-    // =========================================================
-    const peerConfig = {
-      debug: 1,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          {
-            urls: 'turn:global.relay.metered.ca:80',
-            username: 'ab69cea6d2a3617c27f044c4',
-            credential: '6YrWgjFwoNWVWC4Q'
-          }
-        ],
-        iceCandidatePoolSize: 10
-      }
-    };
-
     const urlParams = new URLSearchParams(window.location.search);
     const targetPeerId = urlParams.get('target');
 
-    // 간단한 수신 효과음
     function playSound() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -231,44 +156,32 @@
       } catch (e) {}
     }
 
-    // =========================================================
-    // [모드 1] 운영자 태블릿 로직
-    // =========================================================
+    // [모드 1] 태블릿
     if (!targetPeerId) {
       document.getElementById('tablet-view').classList.remove('hidden');
 
       let peer = null;
       let activeConn = null;
       let currentImageDataUrl = null;
-      let currentFileName = 'sticker_photo.jpg';
 
       const badge = document.getElementById('connection-badge');
       const waitingSection = document.getElementById('tablet-waiting');
       const receivedSection = document.getElementById('tablet-received');
       const receivedImg = document.getElementById('received-image');
 
-      function initTabletSession() {
-        if (peer) {
-          peer.destroy();
-        }
-        activeConn = null;
-        currentImageDataUrl = null;
-
+      function initTablet() {
+        if (peer) peer.destroy();
         waitingSection.classList.remove('hidden');
         receivedSection.classList.add('hidden');
         badge.textContent = 'QR 생성 중...';
-        badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-400/20 text-amber-100';
 
-        const randomId = 'booth-' + Math.random().toString(36).substring(2, 9);
-        peer = new Peer(randomId, peerConfig);
+        peer = new Peer('booth-' + Math.random().toString(36).substring(2, 9));
 
         peer.on('open', (id) => {
           badge.textContent = '● 스캔 대기 중';
           badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-400/25 text-emerald-100';
 
-          const baseUrl = window.location.href.split('?')[0];
-          const connectUrl = `${baseUrl}?target=${id}`;
-
+          const connectUrl = `${window.location.href.split('?')[0]}?target=${id}`;
           const qrContainer = document.getElementById('qrcode');
           qrContainer.innerHTML = '';
           new QRCode(qrContainer, {
@@ -288,9 +201,7 @@
           conn.on('data', (payload) => {
             if (payload && payload.type === 'PHOTO' && payload.dataUrl) {
               currentImageDataUrl = payload.dataUrl;
-              currentFileName = payload.name || 'sticker.jpg';
               receivedImg.src = payload.dataUrl;
-
               waitingSection.classList.add('hidden');
               receivedSection.classList.remove('hidden');
               badge.textContent = '✅ 사진 수신 완료';
@@ -299,43 +210,30 @@
           });
         });
 
-        peer.on('disconnected', () => {
-          badge.textContent = '재연결 시도 중...';
-          peer.reconnect();
-        });
-
-        peer.on('error', (err) => {
-          console.error('Peer error:', err);
-          badge.textContent = '네트워크 재시도 중...';
-          setTimeout(initTabletSession, 2000);
+        peer.on('error', () => {
+          setTimeout(initTablet, 2000);
         });
       }
 
-      // 1. 태블릿 저장
       document.getElementById('btn-download').addEventListener('click', () => {
         if (!currentImageDataUrl) return;
         const link = document.createElement('a');
         link.href = currentImageDataUrl;
-        const timestamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
-        link.download = `sticker_${timestamp}.jpg`;
+        link.download = `sticker_${Date.now()}.jpg`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       });
 
-      // 2. 새로운 사진 받기 (다음 체험자 준비)
       document.getElementById('btn-next-photo').addEventListener('click', () => {
         receivedImg.src = '';
         currentImageDataUrl = null;
-        initTabletSession();
+        initTablet();
       });
 
-      initTabletSession();
+      initTablet();
     }
-
-    // =========================================================
-    // [모드 2] 체험자 스마트폰 로직
-    // =========================================================
+    // [모드 2] 스마트폰
     else {
       document.getElementById('mobile-view').classList.remove('hidden');
 
@@ -345,11 +243,10 @@
       const sentArea = document.getElementById('mobile-sent-area');
       const photoInput = document.getElementById('photo-input');
 
-      const mobilePeer = new Peer(peerConfig);
+      const mobilePeer = new Peer();
       let conn = null;
-      let retryCount = 0;
 
-      function connectToTablet() {
+      mobilePeer.on('open', () => {
         conn = mobilePeer.connect(targetPeerId, { reliable: true });
 
         conn.on('open', () => {
@@ -363,23 +260,6 @@
           statusText.textContent = '부스 세션이 종료되었습니다.';
           uploadArea.classList.add('opacity-50', 'pointer-events-none');
         });
-
-        conn.on('error', () => {
-          if (retryCount < 3) {
-            retryCount++;
-            statusText.textContent = `연결 재시도 중... (${retryCount}/3)`;
-            setTimeout(connectToTablet, 1500);
-          }
-        });
-      }
-
-      mobilePeer.on('open', () => {
-        connectToTablet();
-      });
-
-      mobilePeer.on('error', () => {
-        statusBox.className = 'mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium flex items-center justify-center gap-2';
-        statusText.textContent = '연결에 실패했습니다. 태블릿 QR을 다시 스캔해 주세요.';
       });
 
       photoInput.addEventListener('change', (e) => {
@@ -407,15 +287,12 @@
 
             canvas.width = width;
             canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
 
             conn.send({
               type: 'PHOTO',
               name: file.name,
-              dataUrl: compressedDataUrl
+              dataUrl: canvas.toDataURL('image/jpeg', 0.92)
             });
 
             uploadArea.classList.add('hidden');
@@ -427,10 +304,8 @@
         reader.readAsDataURL(file);
       });
 
-      // 부스 QR 스캔 첫 화면(URL의 ?target 파라미터가 없는 상태)으로 이동
       document.getElementById('btn-home').addEventListener('click', () => {
-        const baseUrl = window.location.href.split('?')[0];
-        window.location.href = baseUrl;
+        window.location.href = window.location.href.split('?')[0];
       });
     }
   </script>
