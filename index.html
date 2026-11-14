@@ -123,8 +123,9 @@
         <h2 class="text-lg font-bold text-slate-800">전송이 완료되었습니다!</h2>
         <p class="text-sm text-slate-600 mt-1 mb-6">태블릿 화면을 확인해 주세요.</p>
 
-        <button id="btn-home" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition">
-          📱 부스 QR코드 스캔 화면으로 돌아가기
+        <!-- 스마트폰 앱(창)을 닫거나 종료시키는 버튼 -->
+        <button id="btn-close-app" class="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition">
+          ❌ 체험 완료 (창 닫기)
         </button>
       </div>
 
@@ -304,8 +305,13 @@
         reader.readAsDataURL(file);
       });
 
-      document.getElementById('btn-home').addEventListener('click', () => {
-        window.location.href = window.location.href.split('?')[0];
+      // 스마트폰 브라우저 창 닫기 시도 (브라우저 정책상 안 닫히면 빈 화면으로 처리)
+      document.getElementById('btn-close-app').addEventListener('click', () => {
+        try {
+          window.close();
+        } catch (e) {}
+        // 창이 안 닫히는 모바일 브라우저 환경을 대비해 빈 화면으로 비우고 안내 문구 출력
+        document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center; color:#555;"><h2>체험이 완료되었습니다. 창을 닫아주세요! 👋</h2></div>';
       });
     }
   </script>
