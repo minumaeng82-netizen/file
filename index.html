@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Liene PixCut S1 · 안심 P2P 스티커 사진 전송</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Pretendard & Noto Sans KR 폰트 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
+
+  <!-- PeerJS (WebRTC P2P 전송용) & QRCode.js -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    * {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: linear-gradient(135deg, #fdfbfb 0%, #f4f1ea 100%);
+      min-height: 100dvh;
+    }
+
+    /* 스티커 프레임 그림자 효과 */
+    .sticker-frame {
+      background: #ffffff;
+      padding: 14px;
+      border-radius: 24px;
+      box-shadow: 0 18px 40px -12px rgba(24, 24, 27, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      position: relative;
+    }
+
+    /* QR 코드 컨테이너 중앙 정렬 */
+    #qrcode img, #qrcode canvas {
+      margin: 0 auto;
+      border-radius: 12px;
+      display: block;
+    }
+
+    /* 파쇄(Shredding) 애니메이션 */
+    @keyframes shredFall {
+      0% {
+        transform: translateY(0) scaleY(1);
+        opacity: 1;
+        filter: blur(0px);
+      }
+      45% {
+        transform: translateY(28px) scaleY(1.06);
+        opacity: 0.85;
+      }
+      100% {
+        transform: translateY(150px) scaleY(0.2);
+        opacity: 0;
+        filter: blur(6px);
+      }
+    }
+
+    .shred-strip {
+      animation: shredFall 0.95s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+    }
+
+    /* 미세한 펄스 애니메이션 */
+    @keyframes softPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.03); opacity: 0.85; }
+    }
+    .pulse-soft {
+      animation: softPulse 2.4s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased flex flex-col justify-between selection:bg-amber-200">
+
+  <!-- 상단 공통 헤더 -->
+  <header class="w-full max-w-4xl mx-auto px-5 pt-5 pb-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-md">
+        <!-- 스티커 아이콘 SVG -->
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">Liene PixCut S1 체험 부스</h1>
+        <p class="text-xs text-slate-500 font-medium">앱 설치 없는 즉석 P2P 스티커 전송</p>
+      </div>
+    </div>
+
+    <!-- 보안 배지 -->
+    <div class="hidden sm:flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm">
+      <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+      <span>서버 저장 0% · 기기 간 암호화 직접 전송</span>
+    </div>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-col items-center justify-center">
+
+    <!-- ===================================================================== -->
+    <!-- 1. HOST MODE (운영자 태블릿 화면)                                       -->
+    <!-- ===================================================================== -->
+    <section id="host-view" class="hidden w-full">
+
+      <!-- [상태 A] 대기 화면: QR 코드 및 안내 -->
+      <div id="host-standby" class="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-stone-200/80 p-6 sm:p-10 text-center transition-all">
+        <!-- 연결 상태 표시 배지 -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-6 bg-amber-50 text-amber-800 border border-amber-200" id="host-status-badge">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+          <span id="host-status-text">QR 연결 코드 생성 중...</span>
+        </div>
+
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
+          스마트폰 카메라로 QR코드를 스캔하세요
+        </h2>
+        <p class="text-slate-600 text-sm sm:text-base max-w-lg mx-auto mb-7">
+          별도의 앱 설치 없이 나만의 스티커로 만들 사진을 태블릿으로 바로 보낼 수 있습니다.
+        </p>
+
+        <!-- QR 코드 카드 -->
+        <div class="inline-block bg-white p-5 sm:p-6 rounded-3xl shadow-lg border-2 border-amber-200/80 mb-6 relative">
+          <div id="qrcode" class="w-52 h-52 sm:w-60 sm:h-60 flex items-center justify-center"></div>
+          <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
+            <span>부스 코드</span>
+            <span id="host-room-code" class="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-lg">------</span>
+          </div>
+        </div>
+
+        <!-- 프라이버시 안심 배너 -->
+        <div class="max-w-xl mx-auto bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 flex items-start sm:items-center gap-3 text-left">
+          <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-emerald-950">개인정보 100% 보호 안내</p>
+            <p class="text-xs sm:text-sm text-emerald-800 leading-relaxed">
+              서버에 사진이 전혀 저장되지 않으며, 스티커 인쇄 직후 체험자 눈앞에서 태블릿 메모리에서도 즉시 영구 파기됩니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- 운영자 편의 도구 (테스트 / 링크 복사) -->
+        <div class="mt-7 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3 text-xs">
+          <button onclick="copyShareUrl()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            전송 링크 복사 (PC/탭 테스트용)
+          </button>
+          <button onclick="simulateSampleImage()" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-semibold transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            테스트용 샘플 사진 수신 체험
+          </button>
+        </div>
+      </div>
+
+      <!-- [상태 B] 사진 수신 완료 및 저장/파기 화면 -->
+      <div id="host-received" class="hidden bg-white rounded-3xl shadow-xl border border-stone-200 p-6 sm:p-8 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-4 bg-blue-50 text-blue-700 border border-blue-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>체험자 사진 수신 완료!</span>
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-5">
+          사진을 저장해 Liene 앱에서 인쇄한 뒤 파기해 주세요
+        </h2>
+
+        <!-- 수신된 이미지 미리보기 (파쇄 애니메이션 영역 포함) -->
+        <div class="max-w-sm mx-auto mb-6 relative overflow-hidden rounded-3xl">
+          <div id="received-preview-box" class="sticker-frame">
+            <img id="host-preview-img" src="" alt="수신된 사진" class="w-full max-h-80 object-contain rounded-2xl bg-slate-50 mx-auto" />
+            <p id="host-file-meta" class="text-xs text-slate-400 font-medium mt-2.5 truncate"></p>
+          </div>
+          <!-- 파쇄 효과 오버레이 컨테이너 -->
+          <div id="shredder-overlay" class="hidden absolute inset-0 pointer-events-none flex overflow-hidden rounded-3xl"></div>
+        </div>
+
+        <!-- 주요 액션 버튼 2개 -->
+        <div class="max-w-lg mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <button id="btn-download-photo" onclick="downloadReceivedPhoto()" class="w-full py-4 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white font-bold text-base shadow-lg transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>1. 태블릿에 사진 저장</span>
+          </button>
+
+          <button id="btn-destroy-photo" onclick="destroyReceivedPhoto()" class="w-full py-4 px-5 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white font-bold text-base shadow-lg shadow-rose-200 transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>2. 사진 즉시 파기 (다음 손님)</span>
+          </button>
+        </div>
+
+        <p class="mt-4 text-xs text-slate-500">
+          ※ <strong>[1. 태블릿에 사진 저장]</strong> 후 <strong>Liene Photo</strong> 앱에서 불러와 커팅·출력하시고, 갤러리 휴지통도 함께 비워주세요.
+        </p>
+      </div>
+
+      <!-- [상태 C] 영구 파기 완료 화면 (잠시 표시 후 새 QR 생성) -->
+      <div id="host-destroyed" class="hidden bg-white rounded-3xl shadow-xl border border-emerald-200 p-8 sm:p-12 text-center">
+        <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-5">
+          <svg class="w-11 h-11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
+          사진 데이터가 메모리에서 완전히 영구 파기되었습니다
+        </h2>
+        <p class="text-slate-600 text-sm sm:text-base mb-6">
+          다음 체험자를 위한 새로운 암호화 QR코드를 자동으로 준비하고 있습니다...
+        </p>
+        <div class="w-48 h-1.5 bg-slate-100 rounded-full mx-auto overflow-hidden">
+          <div class="h-full bg-emerald-500 rounded-full animate-pulse w-full"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 2. SENDER MODE (체험자 스마트폰 화면)                                  -->
+    <!-- ===================================================================== -->
+    <section id="sender-view" class="hidden w-full max-w-md mx-auto">
+      <div class="bg-white rounded-3xl shadow-xl border border-stone-200/90 p-6 sm:p-7 text-center">
+
+        <!-- 연결 상태 배지 -->
+        <div id="sender-status-badge" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5 bg-amber-50 text-amber-800 border border-amber-200">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span id="sender-status-text">부스 태블릿과 연결 중...</span>
+        </div>
+
+        <!-- [단계 1] 사진 선택 및 전송 화면 -->
+        <div id="sender-step-select">
+          <h2 class="text-2xl font-extrabold text-slate-900 mb-2">
+            스티커로 만들 사진 선택
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mb-6 leading-relaxed">
+            선택한 사진은 서버에 저장되지 않고<br/>앞에 있는 <strong>부스 태블릿으로만 직접 전송</strong>됩니다.
+          </p>
+
+          <!-- 숨겨진 파일 입력창 -->
+          <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="handlePhotoSelected(event)" />
+
+          <!-- 사진 선택 전 큰 버튼 -->
+          <div id="sender-empty-box" onclick="triggerFileSelect()" class="cursor-pointer border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50 rounded-3xl p-8 transition group mb-4">
+            <div class="w-16 h-16 rounded-2xl bg-amber-400 group-hover:bg-amber-500 text-white flex items-center justify-center mx-auto mb-3 shadow-md transition">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p class="text-base font-extrabold text-slate-800">사진 선택하기 (갤러리 / 카메라)</p>
+            <p class="text-xs text-slate-500 mt-1">터치하여 앨범에서 사진을 골라주세요</p>
+          </div>
+
+          <!-- 사진 선택 후 미리보기 & 전송 버튼 -->
+          <div id="sender-preview-box" class="hidden mb-4">
+            <div class="sticker-frame mb-4">
+              <img id="sender-preview-img" src="" alt="선택한 사진 미리보기" class="w-full max-h-64 object-contain rounded-2xl bg-slate-50 mx-auto" />
+              <button onclick="triggerFileSelect()" class="mt-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 underline">
+                다른 사진으로 다시 고르기
+              </button>
+            </div>
+
+            <!-- 전송 진행률 바 -->
+            <div id="sender-progress-wrap" class="hidden mb-4">
+              <div class="flex justify-between text-xs font-bold text-amber-700 mb-1">
+                <span>태블릿으로 안전하게 전송 중...</span>
+                <span id="sender-progress-pct">0%</span>
+              </div>
+              <div class="w-full h-2.5 bg-amber-100 rounded-full overflow-hidden">
+                <div id="sender-progress-bar" class="h-full bg-amber-500 rounded-full transition-all duration-200" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <button id="btn-send-photo" onclick="sendPhotoToHost()" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] text-white font-extrabold text-lg shadow-lg shadow-orange-200 transition flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              <span>태블릿으로 전송하기</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- [단계 2] 전송 완료 안내 화면 -->
+        <div id="sender-step-done" class="hidden py-4">
+          <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-9 h-9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-extrabold text-slate-900 mb-2">
+            전송 완료!
+          </h2>
+          <p class="text-sm text-slate-600 mb-6 leading-relaxed">
+            앞에 있는 <strong>태블릿 화면</strong>을 확인해 주세요.<br/>
+            스태프와 함께 나만의 스티커를 꾸며 출력할 수 있습니다.
+          </p>
+
+          <!-- 태블릿 파기 상태 실시간 표시 박스 -->
+          <div id="sender-destroy-notice" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-600 mb-5">
+            <div class="flex items-center justify-center gap-1.5 font-bold text-slate-700 mb-1">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>출력 대기 중 (출력 후 즉시 파기됩니다)</span>
+            </div>
+            <p>이 창을 켜두시면 태블릿에서 사진이 파기될 때 실시간 알림을 받으실 수 있습니다.</p>
+          </div>
+
+          <button onclick="resetSenderForAnother()" class="text-xs font-bold text-slate-400 hover:text-slate-600 underline">
+            사진 한 장 더 보내기
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 하단 푸터 & 토스트 메시지 -->
+  <footer class="w-full max-w-4xl mx-auto px-5 py-4 text-center text-xs text-slate-400">
+    WebRTC P2P Direct Transfer · No Cloud Storage · Liene PixCut S1 Booth Helper
+  </footer>
+
+  <!-- 커스텀 토스트 알림창 (alert 대체) -->
+  <div id="toast-box" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 translate-y-3">
+    <div id="toast-msg" class="bg-slate-900/95 text-white text-sm font-semibold px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md"></div>
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * 전역 상태 변수 및 유틸리티
+     * =========================================================================
+     */
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetHostId = urlParams.get('target'); // 값이 있으면 Sender(체험자 폰), 없으면 Host(태블릿)
+
+    let peer = null;
+    let activeConn = null;
+
+    // Host 측 수신 데이터 (메모리 전용, 파기 시 즉시 null 처리)
+    let receivedImageBlobUrl = null;
+    let receivedImageBlob = null;
+    let receivedFileName = 'sticker_photo.jpg';
+
+    // Sender 측 선택 파일 데이터
+    let selectedFile = null;
+    let senderPreviewUrl = null;
+
+    // 토스트 알림 함수
+    let toastTimer = null;
+    function showToast(message) {
+      const box = document.getElementById('toast-box');
+      const msg = document.getElementById('toast-msg');
+      msg.textContent = message;
+      box.classList.remove('opacity-0', 'translate-y-3');
+      box.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.remove('opacity-100', 'translate-y-0');
+        box.classList.add('opacity-0', 'translate-y-3');
+      }, 3200);
+    }
+
+    /**
+     * =========================================================================
+     * Web Audio API 효과음 (수신 차임벨 & 파쇄기 사운드)
+     * =========================================================================
+     */
+    function playChimeSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.15, now + idx * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.45);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.5);
+        });
+      } catch (e) {
+        // 오디오 차단 환경 무시
+      }
+    }
+
+    function playShredSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const duration = 0.85;
+        const bufferSize = ctx.sampleRate * duration;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // 종이 파쇄 질감의 필터링 노이즈 생성
+        for (let i = 0; i < bufferSize; i++) {
+          const mod = Math.sin(i * 0.045) > 0 ? 1 : 0.25;
+          data[i] = (Math.random() * 2 - 1) * mod * Math.exp(-i / (bufferSize * 0.65));
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, ctx.currentTime);
+        filter.Q.value = 1.4;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.28, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start();
+      } catch (e) {
+        // 오디오 차단 환경 무시
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 초기 진입점: 모드 자동 분기 (Host vs Sender)
+     * =========================================================================
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      if (targetHostId) {
+        document.getElementById('sender-view').classList.remove('hidden');
+        initSenderMode(targetHostId);
+      } else {
+        document.getElementById('host-view').classList.remove('hidden');
+        initHostMode();
+      }
+    });
+
+    /**
+     * =========================================================================
+     * 1. HOST MODE (태블릿 키오스크 로직)
+     * =========================================================================
+     */
+    function generateShortCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    function initHostMode() {
+      // 기존 Peer 정리
+      if (peer) {
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
+      }
+      activeConn = null;
+
+      // UI 초기화
+      document.getElementById('host-standby').classList.remove('hidden');
+      document.getElementById('host-received').classList.add('hidden');
+      document.getElementById('host-destroyed').classList.add('hidden');
+      setHostStatus('waiting', 'QR 연결 코드 생성 중...');
+
+      const shortCode = generateShortCode();
+      const newPeerId = `sticker-booth-${shortCode}-${Date.now().toString(36).slice(-3)}`;
+
+      peer = new Peer(newPeerId, {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        }
+      });
+
+      peer.on('open', (id) => {
+        document.getElementById('host-room-code').textContent = shortCode;
+        setHostStatus('ready', '스캔 대기 중 · 체험자 스마트폰을 기다리고 있습니다');
+
+        // QR 코드 생성
+        const baseUrl = window.location.href.split('?')[0];
+        const shareUrl = `${baseUrl}?target=${encodeURIComponent(id)}`;
+        window.currentShareUrl = shareUrl;
+
+        const qrContainer = document.getElementById('qrcode');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: shareUrl,
+          width: 220,
+          height: 220,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      });
+
+      peer.on('connection', (conn) => {
+        activeConn = conn;
+        setHostStatus('connected', '체험자 스마트폰이 연결되었습니다! 사진 선택 중...');
+
+        // 청크 수신용 버퍼
+        let incomingChunks = [];
+        let incomingMeta = null;
+
+        conn.on('data', (data) => {
+          // 1) 전송 시작 메타데이터
+          if (data && data.type === 'file-meta') {
+            incomingChunks = [];
+            incomingMeta = data;
+            setHostStatus('connected', '사진을 안전하게 수신하고 있습니다...');
+          }
+          // 2) 바이너리 청크 수신
+          else if (data && data.type === 'file-chunk') {
+            incomingChunks[data.index] = data.chunk;
+            // 수신 확인 ACK 전송 (진행률 업데이트용)
+            conn.send({ type: 'chunk-ack', index: data.index });
+          }
+          // 3) 전송 완료 신호
+          else if (data && data.type === 'file-end' && incomingMeta) {
+            const blob = new Blob(incomingChunks, { type: incomingMeta.mimeType || 'image/jpeg' });
+            handleHostImageReceived(blob, incomingMeta.fileName || 'sticker_photo.jpg');
+            conn.send({ type: 'transfer-complete' });
+            incomingChunks = [];
+            incomingMeta = null;
+          }
+        });
+
+        conn.on('close', () => {
+          if (!document.getElementById('host-standby').classList.contains('hidden')) {
+            setHostStatus('ready', '스캔 대기 중 · 체험자 스마트폰을 기다리고 있습니다');
+          }
+        });
+      });
+
+      peer.on('error', (err) => {
+        console.error('Host Peer Error:', err);
+        setHostStatus('waiting', '네트워크 재연결 중...');
+        setTimeout(() => initHostMode(), 3000);
+      });
+    }
+
+    function setHostStatus(state, text) {
+      const badge = document.getElementById('host-status-badge');
+      const label = document.getElementById('host-status-text');
+      label.textContent = text;
+
+      badge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-6 border ';
+      if (state === 'connected') {
+        badge.className += 'bg-emerald-50 text-emerald-800 border-emerald-200';
+      } else if (state === 'ready') {
+        badge.className += 'bg-amber-50 text-amber-800 border-amber-200';
+      } else {
+        badge.className += 'bg-slate-100 text-slate-700 border-slate-200';
+      }
+    }
+
+    function handleHostImageReceived(blob, fileName) {
+      // 이전 메모리가 남아있다면 즉시 해제
+      if (receivedImageBlobUrl) {
+        URL.revokeObjectURL(receivedImageBlobUrl);
+      }
+
+      receivedImageBlob = blob;
+      receivedFileName = fileName;
+      receivedImageBlobUrl = URL.createObjectURL(blob);
+
+      const imgEl = document.getElementById('host-preview-img');
+      imgEl.src = receivedImageBlobUrl;
+
+      const sizeKB = Math.round(blob.size / 1024);
+      document.getElementById('host-file-meta').textContent = `${fileName} (${sizeKB.toLocaleString()} KB · 메모리 임시 보관 중)`;
+
+      // 화면 전환 및 알림음
+      document.getElementById('host-standby').classList.add('hidden');
+      document.getElementById('host-received').classList.remove('hidden');
+      document.getElementById('shredder-overlay').classList.add('hidden');
+      document.getElementById('shredder-overlay').innerHTML = '';
+
+      playChimeSound();
+      showToast('체험자의 사진이 도착했습니다!');
+    }
+
+    // 태블릿에 사진 저장 (Liene 앱에서 불러오기 위함)
+    function downloadReceivedPhoto() {
+      if (!receivedImageBlobUrl) return;
+      const a = document.createElement('a');
+      a.href = receivedImageBlobUrl;
+      const timestamp = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
+      a.download = `Liene_Sticker_${timestamp}_${receivedFileName}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('태블릿에 저장되었습니다. Liene Photo 앱에서 불러오세요!');
+    }
+
+    // 원클릭 영구 파기 애니메이션 & 메모리 초기화
+    function destroyReceivedPhoto() {
+      const overlay = document.getElementById('shredder-overlay');
+      const previewImg = document.getElementById('host-preview-img');
+      const imgSrc = previewImg.src;
+
+      // 파쇄 사운드 재생
+      playShredSound();
+
+      // 시각적 파쇄 스트립(12조각) 생성
+      overlay.innerHTML = '';
+      overlay.classList.remove('hidden');
+      const stripCount = 12;
+
+      for (let i = 0; i < stripCount; i++) {
+        const strip = document.createElement('div');
+        strip.className = 'flex-1 h-full shred-strip border-x border-white/40 shadow-sm';
+        strip.style.backgroundImage = `url(${imgSrc})`;
+        strip.style.backgroundSize = `${stripCount * 100}% 100%`;
+        strip.style.backgroundPosition = `${(i / (stripCount - 1)) * 100}% center`;
+        strip.style.animationDelay = `${(i % 4) * 0.04}s`;
+        overlay.appendChild(strip);
+      }
+
+      // 연결된 체험자 스마트폰에도 파기 완료 신호 전송
+      if (activeConn && activeConn.open) {
+        try {
+          activeConn.send({ type: 'photo-destroyed' });
+        } catch (e) {}
+      }
+
+      // 애니메이션 진행 후 실제 RAM 메모리에서 완전히 파기
+      setTimeout(() => {
+        if (receivedImageBlobUrl) {
+          URL.revokeObjectURL(receivedImageBlobUrl);
+          receivedImageBlobUrl = null;
+        }
+        receivedImageBlob = null;
+        previewImg.src = '';
+        overlay.innerHTML = '';
+        overlay.classList.add('hidden');
+
+        document.getElementById('host-received').classList.add('hidden');
+        document.getElementById('host-destroyed').classList.remove('hidden');
+
+        // 2.2초 후 다음 체험자를 위해 새 Peer ID & QR 코드 자동 발급
+        setTimeout(() => {
+          initHostMode();
+        }, 2200);
+      }, 950);
+    }
+
+    // URL 복사 (다른 브라우저 탭에서 Sender 모드 테스트 시 편리)
+    function copyShareUrl() {
+      if (!window.currentShareUrl) return;
+      const tempInput = document.createElement('input');
+      tempInput.value = window.currentShareUrl;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showToast('전송 링크가 복사되었습니다! 새 탭에 붙여넣어 테스트해 보세요.');
+    }
+
+    // 테스트용 샘플 이미지 생성 및 수신 시뮬레이션
+    function simulateSampleImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+
+      // 파스텔 배경
+      const grad = ctx.createLinearGradient(0, 0, 600, 600);
+      grad.addColorStop(0, '#fde68a');
+      grad.addColorStop(1, '#fca5a5');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 600);
+
+      // 귀여운 캐릭터 원형 일러스트
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(300, 300, 190, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(240, 270, 18, 0, Math.PI * 2);
+      ctx.arc(360, 270, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(300, 315, 45, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillStyle = '#475569';
+      ctx.textAlign = 'center';
+      ctx.fillText('Liene PixCut S1 Sample', 300, 545);
+
+      canvas.toBlob((blob) => {
+        handleHostImageReceived(blob, 'sample_sticker_test.png');
+      }, 'image/png');
+    }
+
+    /**
+     * =========================================================================
+     * 2. SENDER MODE (체험자 스마트폰 로직)
+     * =========================================================================
+     */
+    function initSenderMode(hostId) {
+      setSenderStatus('connecting', '부스 태블릿과 안전하게 연결 중...');
+
+      peer = new Peer({
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        }
+      });
+
+      peer.on('open', () => {
+        connectToHost(hostId);
+      });
+
+      peer.on('error', (err) => {
+        console.error('Sender Peer Error:', err);
+        setSenderStatus('error', '연결이 지연되고 있습니다. 전송 시 자동 재연결됩니다.');
+      });
+    }
+
+    function connectToHost(hostId) {
+      return new Promise((resolve, reject) => {
+        if (activeConn && activeConn.open) {
+          setSenderStatus('connected', '태블릿과 안전하게 연결되었습니다');
+          resolve(activeConn);
+          return;
+        }
+
+        const conn = peer.connect(hostId, { reliable: true });
+        activeConn = conn;
+
+        const timeout = setTimeout(() => {
+          reject(new Error('연결 시간 초과'));
+        }, 10000);
+
+        conn.on('open', () => {
+          clearTimeout(timeout);
+          setSenderStatus('connected', '태블릿과 안전하게 연결되었습니다');
+          resolve(conn);
+        });
+
+        conn.on('data', (data) => {
+          if (data && data.type === 'photo-destroyed') {
+            handleHostDestroyedSignal();
+          }
+        });
+
+        conn.on('close', () => {
+          setSenderStatus('waiting', '대기 중 (전송 버튼을 누르면 자동 연결됩니다)');
+        });
+
+        conn.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
+    }
+
+    function setSenderStatus(state, text) {
+      const badge = document.getElementById('sender-status-badge');
+      const label = document.getElementById('sender-status-text');
+      label.textContent = text;
+
+      badge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5 border ';
+      if (state === 'connected') {
+        badge.className += 'bg-emerald-50 text-emerald-800 border-emerald-200';
+      } else if (state === 'error') {
+        badge.className += 'bg-rose-50 text-rose-700 border-rose-200';
+      } else {
+        badge.className += 'bg-amber-50 text-amber-800 border-amber-200';
+      }
+    }
+
+    function triggerFileSelect() {
+      document.getElementById('photo-input').click();
+    }
+
+    function handlePhotoSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      selectedFile = file;
+      if (senderPreviewUrl) {
+        URL.revokeObjectURL(senderPreviewUrl);
+      }
+      senderPreviewUrl = URL.createObjectURL(file);
+
+      document.getElementById('sender-preview-img').src = senderPreviewUrl;
+      document.getElementById('sender-empty-box').classList.add('hidden');
+      document.getElementById('sender-preview-box').classList.remove('hidden');
+
+      // 모바일 브라우저에서 갤러리 앱이 열렸다 닫히면서 WebRTC가 일시 중단되었을 수 있으므로 백그라운드 재연결 시도
+      if (!activeConn || !activeConn.open) {
+        if (peer && !peer.disconnected) {
+          connectToHost(targetHostId).catch(() => {});
+        } else if (peer) {
+          peer.reconnect();
+        }
+      }
+    }
+
+    // 큰 사진도 안정적으로 전송되도록 청크(64KB) 단위로 분할 전송
+    async function sendPhotoToHost() {
+      if (!selectedFile) {
+        showToast('먼저 사진을 선택해 주세요.');
+        return;
+      }
+
+      const sendBtn = document.getElementById('btn-send-photo');
+      const progressWrap = document.getElementById('sender-progress-wrap');
+      const progressBar = document.getElementById('sender-progress-bar');
+      const progressPct = document.getElementById('sender-progress-pct');
+
+      sendBtn.disabled = true;
+      sendBtn.classList.add('opacity-60', 'cursor-not-allowed');
+      progressWrap.classList.remove('hidden');
+      progressBar.style.width = '5%';
+      progressPct.textContent = '5%';
+
+      try {
+        // 전송 직전 연결 보장 (모바일 백그라운드 복귀 대응)
+        if (!peer || peer.destroyed) {
+          await new Promise((res) => {
+            peer = new Peer();
+            peer.on('open', res);
+          });
+        } else if (peer.disconnected) {
+          peer.reconnect();
+        }
+
+        const conn = await connectToHost(targetHostId);
+
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const chunkSize = 64 * 1024; // 64KB
+        const totalChunks = Math.ceil(arrayBuffer.byteLength / chunkSize);
+
+        // 1. 메타데이터 전송
+        conn.send({
+          type: 'file-meta',
+          fileName: selectedFile.name,
+          mimeType: selectedFile.type || 'image/jpeg',
+          totalChunks: totalChunks,
+          totalSize: arrayBuffer.byteLength
+        });
+
+        // 2. 청크 순차 전송
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * chunkSize;
+          const end = Math.min(start + chunkSize, arrayBuffer.byteLength);
+          const chunk = arrayBuffer.slice(start, end);
+
+          conn.send({
+            type: 'file-chunk',
+            index: i,
+            chunk: chunk
+          });
+
+          const pct = Math.min(95, Math.round(((i + 1) / totalChunks) * 90) + 5);
+          progressBar.style.width = `${pct}%`;
+          progressPct.textContent = `${pct}%`;
+
+          // 브라우저 버퍼 과부하 방지용 짧은 대기
+          if (i % 6 === 0) {
+            await new Promise((r) => setTimeout(r, 15));
+          }
+        }
+
+        // 3. 완료 신호 전송
+        conn.send({ type: 'file-end' });
+
+        progressBar.style.width = '100%';
+        progressPct.textContent = '100%';
+
+        setTimeout(() => {
+          document.getElementById('sender-step-select').classList.add('hidden');
+          document.getElementById('sender-step-done').classList.remove('hidden');
+          setSenderStatus('connected', '전송 완료 · 서버 저장 없음');
+        }, 350);
+
+      } catch (err) {
+        console.error(err);
+        showToast('연결이 원활하지 않습니다. 태블릿 화면의 QR을 다시 스캔해 주세요.');
+        sendBtn.disabled = false;
+        sendBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        progressWrap.classList.add('hidden');
+      }
+    }
+
+    // 태블릿에서 운영자가 '사진 즉시 파기'를 눌렀을 때 체험자 폰에도 실시간 표시
+    function handleHostDestroyedSignal() {
+      const notice = document.getElementById('sender-destroy-notice');
+      notice.className = 'bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-800 mb-5 transition-all';
+      notice.innerHTML = `
+        <div class="flex items-center justify-center gap-1.5 font-extrabold text-emerald-900 text-sm mb-1">
+          <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>태블릿에서 사진 데이터가 안전하게 파기되었습니다</span>
+        </div>
+        <p>스티커 체험에 참여해 주셔서 감사합니다!</p>
+      `;
+      playChimeSound();
+    }
+
+    function resetSenderForAnother() {
+      selectedFile = null;
+      document.getElementById('photo-input').value = '';
+      document.getElementById('sender-step-done').classList.add('hidden');
+      document.getElementById('sender-step-select').classList.remove('hidden');
+      document.getElementById('sender-preview-box').classList.add('hidden');
+      document.getElementById('sender-empty-box').classList.remove('hidden');
+
+      const sendBtn = document.getElementById('btn-send-photo');
+      sendBtn.disabled = false;
+      sendBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      document.getElementById('sender-progress-wrap').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
