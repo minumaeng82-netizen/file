@@ -2,317 +2,798 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
   <title>나만의 인생 스티커 만들기 체험 부스</title>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PeerJS (WebRTC P2P 직접 전송) -->
+
+  <!-- PeerJS -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
   <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <!-- Pretendard Font -->
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link
+    rel="stylesheet"
+    crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+  />
+
   <style>
     body {
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      font-family:
+        "Pretendard",
+        -apple-system,
+        BlinkMacSystemFont,
+        system-ui,
+        Roboto,
+        sans-serif;
       background-color: #f8fafc;
       -webkit-tap-highlight-color: transparent;
     }
+
+    button {
+      touch-action: manipulation;
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 text-slate-800 select-none">
 
-  <!-- =========================================================
-       1. 운영자 태블릿 모드 (기본 접속 화면)
-  ========================================================== -->
-  <div id="tablet-view" class="hidden w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden transition-all">
-    <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white flex items-center justify-between">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 text-slate-800">
+
+  <!-- ======================================================
+       1. 운영자 태블릿 화면
+  ======================================================= -->
+  <div
+    id="tablet-view"
+    class="hidden w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+  >
+    <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white flex items-center justify-between gap-3">
       <div>
         <div class="flex items-center gap-2">
           <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="text-xs font-semibold tracking-wider uppercase text-indigo-100">Liene PixCut S1 Kiosk</span>
+          <span class="text-xs font-semibold tracking-wider uppercase text-indigo-100">
+            Liene PixCut S1 Kiosk
+          </span>
         </div>
-        <h1 class="text-xl sm:text-2xl font-bold mt-0.5">나만의 인생 스티커 만들기 체험 부스</h1>
+
+        <h1 class="text-xl sm:text-2xl font-bold mt-0.5">
+          나만의 인생 스티커 만들기 체험 부스
+        </h1>
       </div>
-      <div class="text-right">
-        <span id="connection-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm">
-          준비 중...
-        </span>
-      </div>
+
+      <span
+        id="connection-badge"
+        role="status"
+        class="shrink-0 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/15 text-white"
+      >
+        준비 중...
+      </span>
     </div>
 
     <div class="p-6 sm:p-10">
-      <!-- [상태 A] QR 코드 대기 화면 -->
-      <div id="tablet-waiting" class="flex flex-col items-center text-center">
+
+      <!-- QR 대기 -->
+      <div
+        id="tablet-waiting"
+        class="flex flex-col items-center text-center"
+      >
         <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
           📱 부스 핫스팟 연결 후, 스마트폰 카메라로 QR을 스캔하세요
         </div>
 
-        <div class="relative p-5 bg-white rounded-3xl shadow-lg border-2 border-indigo-100 mb-6">
-          <div id="qrcode" class="w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center"></div>
+        <div class="p-4 sm:p-5 bg-white rounded-3xl shadow-lg border-2 border-indigo-100 mb-6">
+          <div
+            id="qrcode"
+            class="w-60 h-60 flex items-center justify-center"
+          ></div>
         </div>
 
         <p class="text-slate-600 text-sm max-w-md mb-2">
-          별도의 앱 없이 사진을 태블릿으로 즉시 전송할 수 있습니다.
+          별도의 앱 없이 사진을 태블릿으로 전송할 수 있습니다.
         </p>
 
-        <div class="mt-8 pt-4 border-t border-slate-100 w-full text-center">
-          <p class="text-sm font-bold text-slate-500">문원 AI디지털 교육연구회</p>
+        <div class="mt-8 pt-4 border-t border-slate-100 w-full">
+          <p class="text-sm font-bold text-slate-500">
+            문원 AI디지털 교육연구회
+          </p>
         </div>
       </div>
 
-      <!-- [상태 B] 사진 수신 완료 화면 -->
-      <div id="tablet-received" class="hidden flex flex-col items-center text-center">
-        <div class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-bold mb-4">
-          <span>✨ 사진이 안전하게 도착했습니다!</span>
+      <!-- 사진 수신 완료 -->
+      <div
+        id="tablet-received"
+        class="hidden flex flex-col items-center text-center"
+      >
+        <div class="bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-bold mb-4">
+          ✨ 사진이 도착했습니다!
         </div>
 
-        <div class="relative w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-6">
-          <img id="received-image" src="" alt="수신된 사진" class="w-full max-h-80 object-contain mx-auto bg-slate-800" />
+        <div class="w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-6">
+          <img
+            id="received-image"
+            alt="수신된 사진"
+            class="w-full max-h-80 object-contain mx-auto bg-slate-800"
+          />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
-          <button id="btn-download" class="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition">
-            <span>💾 태블릿에 사진 저장</span>
+          <button
+            id="btn-download"
+            type="button"
+            class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition"
+          >
+            💾 태블릿에 사진 저장
           </button>
-          <button id="btn-next-photo" class="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition">
-            <span>🔄 새로운 사진 받기</span>
+
+          <button
+            id="btn-next-photo"
+            type="button"
+            class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl shadow-md transition"
+          >
+            🔄 새로운 사진 받기
           </button>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-slate-100 w-full text-center">
-          <p class="text-sm font-bold text-slate-500">문원 AI디지털 교육연구회</p>
+        <div class="mt-6 pt-4 border-t border-slate-100 w-full">
+          <p class="text-sm font-bold text-slate-500">
+            문원 AI디지털 교육연구회
+          </p>
         </div>
       </div>
     </div>
   </div>
 
-
-  <!-- =========================================================
-       2. 체험자 스마트폰 모드 (QR 스캔 접속 화면)
-  ========================================================== -->
-  <div id="mobile-view" class="hidden w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+  <!-- ======================================================
+       2. 체험자 스마트폰 화면
+  ======================================================= -->
+  <div
+    id="mobile-view"
+    class="hidden w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+  >
     <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white text-center">
-      <span class="text-xs font-semibold uppercase tracking-wider text-indigo-200">Sticker Booth Transfer</span>
-      <h1 class="text-xl font-bold mt-1">스티커 사진 보내기</h1>
+      <span class="text-xs font-semibold uppercase tracking-wider text-indigo-200">
+        Sticker Booth Transfer
+      </span>
+
+      <h1 class="text-xl font-bold mt-1">
+        스티커 사진 보내기
+      </h1>
     </div>
 
     <div class="p-6 text-center">
-      <div id="mobile-status-box" class="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium flex items-center justify-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-        <span id="mobile-status-text">태블릿과 연결 중...</span>
+      <div
+        id="mobile-status-box"
+        role="status"
+        aria-live="polite"
+        class="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium"
+      >
+        <span id="mobile-status-text">
+          태블릿과 연결 중...
+        </span>
       </div>
 
-      <div id="mobile-upload-area" class="opacity-50 pointer-events-none transition-opacity">
-        <label for="photo-input" class="block w-full cursor-pointer">
-          <div class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 rounded-3xl p-8 transition flex flex-col items-center justify-center">
+      <!-- 사진 선택 -->
+      <div
+        id="mobile-upload-area"
+        class="opacity-50 pointer-events-none transition-opacity"
+      >
+        <label
+          for="photo-input"
+          class="block w-full cursor-pointer"
+        >
+          <div class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 rounded-3xl p-8 transition flex flex-col items-center">
             <div class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center text-3xl shadow-md mb-4">
               📸
             </div>
-            <p class="text-base font-bold text-slate-800">여기를 눌러 사진 선택하기</p>
-            <p class="text-xs text-slate-500 mt-1">앨범에서 사진 1장을 골라주세요</p>
+
+            <p class="text-base font-bold">
+              여기를 눌러 사진 선택하기
+            </p>
+
+            <p class="text-xs text-slate-500 mt-1">
+              앨범에서 사진 1장을 골라주세요
+            </p>
           </div>
-          <input id="photo-input" type="file" accept="image/*" class="hidden" />
+
+          <input
+            id="photo-input"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            disabled
+          />
         </label>
       </div>
 
+      <!-- 전송 완료 -->
       <div id="mobile-sent-area" class="hidden py-6">
         <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-3">
           ✅
         </div>
-        <h2 class="text-lg font-bold text-slate-800">전송이 완료되었습니다!</h2>
-        <p class="text-sm text-slate-600 mt-1 mb-6">태블릿 화면을 확인해 주세요.</p>
 
-        <!-- 스마트폰 앱(창)을 닫거나 종료시키는 버튼 -->
-        <button id="btn-close-app" class="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition">
-          ❌ 체험 완료 (창 닫기)
+        <h2 class="text-lg font-bold">
+          전송이 완료되었습니다!
+        </h2>
+
+        <p class="text-sm text-slate-600 mt-1 mb-6">
+          태블릿 화면을 확인해 주세요.
+        </p>
+
+        <button
+          id="btn-close-app"
+          type="button"
+          class="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition"
+        >
+          ❌ 체험 완료 · 종료
         </button>
+
+        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+          체험 완료를 누르면 전송 연결을 종료합니다.
+        </p>
       </div>
 
-      <div class="mt-6 pt-4 border-t border-slate-100 text-center">
-        <p class="text-xs font-bold text-slate-500">문원 AI디지털 교육연구회</p>
+      <div class="mt-6 pt-4 border-t border-slate-100">
+        <p class="text-xs font-bold text-slate-500">
+          문원 AI디지털 교육연구회
+        </p>
       </div>
     </div>
   </div>
 
+  <!-- ======================================================
+       3. 자동으로 창이 닫히지 않을 때 표시하는 종료 화면
+  ======================================================= -->
+  <div
+    id="finished-view"
+    class="hidden w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+  >
+    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8 text-white text-center">
+      <div class="text-5xl mb-3">👋</div>
+      <h1 class="text-2xl font-bold">
+        체험이 종료되었습니다
+      </h1>
+      <p class="text-sm text-emerald-50 mt-2">
+        참여해 주셔서 감사합니다!
+      </p>
+    </div>
+
+    <div class="p-6 text-center">
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6">
+        <p class="text-sm font-semibold text-emerald-800">
+          ✅ 사진 전송 연결이 종료되었습니다.
+        </p>
+        <p class="text-xs text-emerald-700 mt-2 leading-relaxed">
+          태블릿에 도착한 사진은 그대로 유지됩니다.
+        </p>
+      </div>
+
+      <button
+        id="btn-retry-close"
+        type="button"
+        class="w-full bg-slate-800 hover:bg-slate-900 active:scale-95 text-white font-bold py-4 px-5 rounded-2xl transition"
+      >
+        ✕ 창 닫기 다시 시도
+      </button>
+
+      <div
+        id="close-help"
+        class="mt-5 bg-slate-50 rounded-2xl p-4 text-sm text-slate-600 leading-relaxed"
+        role="status"
+        aria-live="polite"
+      >
+        자동으로 닫히지 않는 경우<br />
+        브라우저의 <strong>탭 닫기(×)</strong> 또는<br />
+        <strong>완료</strong> 버튼을 눌러 주세요.
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-100">
+        <p class="text-xs font-bold text-slate-500">
+          문원 AI디지털 교육연구회
+        </p>
+      </div>
+    </div>
+  </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const targetPeerId = urlParams.get('target');
+    const targetPeerId = urlParams.get("target");
 
     function playSound() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContextClass =
+          window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) return;
+
+        const ctx = new AudioContextClass();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
+
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.type = 'sine';
+
+        osc.type = "sine";
         osc.frequency.setValueAtTime(587.33, ctx.currentTime);
         osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+
         gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        gain.gain.exponentialRampToValueAtTime(
+          0.001,
+          ctx.currentTime + 0.4
+        );
+
+        osc.onended = () => {
+          ctx.close().catch(() => {});
+        };
+
         osc.start();
         osc.stop(ctx.currentTime + 0.4);
-      } catch (e) {}
+      } catch (error) {
+        // 소리 재생이 차단되어도 사진 수신은 유지합니다.
+      }
     }
 
-    // [모드 1] 태블릿
+    function tryCloseWindow() {
+      try {
+        window.close();
+      } catch (error) {
+        // 닫기가 차단되면 종료 안내 화면을 유지합니다.
+      }
+    }
+
+    document
+      .getElementById("btn-retry-close")
+      .addEventListener("click", () => {
+        tryCloseWindow();
+
+        setTimeout(() => {
+          document.getElementById("close-help").textContent =
+            "이 브라우저에서는 자동으로 창을 닫을 수 없습니다. " +
+            "브라우저의 탭 닫기(×) 또는 완료 버튼을 눌러 주세요.";
+        }, 300);
+      });
+
+    // ======================================================
+    // 태블릿 모드
+    // ======================================================
     if (!targetPeerId) {
-      document.getElementById('tablet-view').classList.remove('hidden');
+      document
+        .getElementById("tablet-view")
+        .classList.remove("hidden");
 
       let peer = null;
       let activeConn = null;
       let currentImageDataUrl = null;
+      let retryTimer = null;
 
-      const badge = document.getElementById('connection-badge');
-      const waitingSection = document.getElementById('tablet-waiting');
-      const receivedSection = document.getElementById('tablet-received');
-      const receivedImg = document.getElementById('received-image');
+      const badge =
+        document.getElementById("connection-badge");
+      const waitingSection =
+        document.getElementById("tablet-waiting");
+      const receivedSection =
+        document.getElementById("tablet-received");
+      const receivedImg =
+        document.getElementById("received-image");
+      const qrContainer =
+        document.getElementById("qrcode");
 
       function initTablet() {
-        if (peer) peer.destroy();
-        waitingSection.classList.remove('hidden');
-        receivedSection.classList.add('hidden');
-        badge.textContent = 'QR 생성 중...';
+        clearTimeout(retryTimer);
 
-        peer = new Peer('booth-' + Math.random().toString(36).substring(2, 9));
+        const oldPeer = peer;
+        peer = null;
 
-        peer.on('open', (id) => {
-          badge.textContent = '● 스캔 대기 중';
-          badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-400/25 text-emerald-100';
+        if (activeConn) {
+          activeConn.close();
+          activeConn = null;
+        }
 
-          const connectUrl = `${window.location.href.split('?')[0]}?target=${id}`;
-          const qrContainer = document.getElementById('qrcode');
-          qrContainer.innerHTML = '';
+        if (oldPeer) {
+          oldPeer.destroy();
+        }
+
+        waitingSection.classList.remove("hidden");
+        receivedSection.classList.add("hidden");
+
+        badge.textContent = "QR 생성 중...";
+        qrContainer.innerHTML = "";
+
+        const newPeer = new Peer(
+          "booth-" + Math.random().toString(36).substring(2, 11)
+        );
+
+        peer = newPeer;
+
+        newPeer.on("open", (id) => {
+          if (peer !== newPeer) return;
+
+          badge.textContent = "● 스캔 대기 중";
+
+          const connectUrl = new URL(window.location.href);
+          connectUrl.searchParams.set("target", id);
+          connectUrl.hash = "";
+
           new QRCode(qrContainer, {
-            text: connectUrl,
+            text: connectUrl.toString(),
             width: 240,
             height: 240,
-            colorDark: '#1e1b4b',
-            colorLight: '#ffffff',
+            colorDark: "#1e1b4b",
+            colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M
           });
         });
 
-        peer.on('connection', (conn) => {
-          activeConn = conn;
-          badge.textContent = '📱 스마트폰 연결됨';
+        newPeer.on("connection", (conn) => {
+          if (peer !== newPeer) {
+            conn.close();
+            return;
+          }
 
-          conn.on('data', (payload) => {
-            if (payload && payload.type === 'PHOTO' && payload.dataUrl) {
+          // 동시에 여러 스마트폰이 사진을 덮어쓰지 않도록 제한
+          if (currentImageDataUrl || (activeConn && activeConn.open)) {
+            conn.on("open", () => conn.close());
+            return;
+          }
+
+          activeConn = conn;
+
+          conn.on("open", () => {
+            if (peer !== newPeer) return;
+            badge.textContent = "📱 스마트폰 연결됨";
+          });
+
+          conn.on("data", (payload) => {
+            if (peer !== newPeer || activeConn !== conn) return;
+
+            if (
+              payload &&
+              payload.type === "PHOTO" &&
+              typeof payload.dataUrl === "string" &&
+              payload.dataUrl.startsWith("data:image/jpeg;base64,")
+            ) {
               currentImageDataUrl = payload.dataUrl;
-              receivedImg.src = payload.dataUrl;
-              waitingSection.classList.add('hidden');
-              receivedSection.classList.remove('hidden');
-              badge.textContent = '✅ 사진 수신 완료';
+              receivedImg.src = currentImageDataUrl;
+
+              waitingSection.classList.add("hidden");
+              receivedSection.classList.remove("hidden");
+
+              badge.textContent = "✅ 사진 수신 완료";
+
+              // 실제 수신 사실을 스마트폰에 알립니다.
+              if (conn.open) {
+                conn.send({ type: "PHOTO_RECEIVED" });
+              }
+
               playSound();
+            }
+          });
+
+          conn.on("close", () => {
+            if (peer !== newPeer || activeConn !== conn) return;
+
+            activeConn = null;
+
+            // 스마트폰이 종료되어도 수신 사진은 유지합니다.
+            if (currentImageDataUrl) {
+              badge.textContent = "✅ 사진 수신 완료";
+            } else {
+              badge.textContent = "● 스캔 대기 중";
+            }
+          });
+
+          conn.on("error", () => {
+            if (peer !== newPeer) return;
+
+            if (!currentImageDataUrl) {
+              badge.textContent = "연결 오류 · 다시 스캔해 주세요";
             }
           });
         });
 
-        peer.on('error', () => {
-          setTimeout(initTablet, 2000);
+        newPeer.on("error", () => {
+          if (peer !== newPeer) return;
+
+          // 이미 받은 사진이 있으면 화면을 초기화하지 않습니다.
+          if (currentImageDataUrl) {
+            badge.textContent = "사진 유지 중 · 연결 오류";
+            return;
+          }
+
+          badge.textContent = "연결 재시도 중...";
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(initTablet, 2000);
         });
       }
 
-      document.getElementById('btn-download').addEventListener('click', () => {
-        if (!currentImageDataUrl) return;
-        const link = document.createElement('a');
-        link.href = currentImageDataUrl;
-        link.download = `sticker_${Date.now()}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
+      document
+        .getElementById("btn-download")
+        .addEventListener("click", () => {
+          if (!currentImageDataUrl) return;
 
-      document.getElementById('btn-next-photo').addEventListener('click', () => {
-        receivedImg.src = '';
-        currentImageDataUrl = null;
-        initTablet();
-      });
+          const link = document.createElement("a");
+          link.href = currentImageDataUrl;
+          link.download = `sticker_${Date.now()}.jpg`;
+
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        });
+
+      document
+        .getElementById("btn-next-photo")
+        .addEventListener("click", () => {
+          receivedImg.removeAttribute("src");
+          currentImageDataUrl = null;
+          initTablet();
+        });
 
       initTablet();
     }
-    // [모드 2] 스마트폰
-    else {
-      document.getElementById('mobile-view').classList.remove('hidden');
 
-      const statusBox = document.getElementById('mobile-status-box');
-      const statusText = document.getElementById('mobile-status-text');
-      const uploadArea = document.getElementById('mobile-upload-area');
-      const sentArea = document.getElementById('mobile-sent-area');
-      const photoInput = document.getElementById('photo-input');
+    // ======================================================
+    // 스마트폰 모드
+    // ======================================================
+    else {
+      const mobileView =
+        document.getElementById("mobile-view");
+      const finishedView =
+        document.getElementById("finished-view");
+      const statusBox =
+        document.getElementById("mobile-status-box");
+      const statusText =
+        document.getElementById("mobile-status-text");
+      const uploadArea =
+        document.getElementById("mobile-upload-area");
+      const sentArea =
+        document.getElementById("mobile-sent-area");
+      const photoInput =
+        document.getElementById("photo-input");
+
+      mobileView.classList.remove("hidden");
 
       const mobilePeer = new Peer();
+
       let conn = null;
+      let sessionEnded = false;
+      let photoReceived = false;
+      let isSending = false;
+      let receiptTimer = null;
 
-      mobilePeer.on('open', () => {
-        conn = mobilePeer.connect(targetPeerId, { reliable: true });
+      function setUploadEnabled(enabled) {
+        photoInput.disabled = !enabled;
+        uploadArea.classList.toggle("opacity-50", !enabled);
+        uploadArea.classList.toggle("pointer-events-none", !enabled);
+      }
 
-        conn.on('open', () => {
-          statusBox.className = 'mb-6 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold flex items-center justify-center gap-2';
-          statusText.textContent = '태블릿과 연결되었습니다! 사진을 선택하세요';
-          uploadArea.classList.remove('opacity-50', 'pointer-events-none');
+      function showError(message) {
+        if (sessionEnded || photoReceived) return;
+
+        clearTimeout(receiptTimer);
+        isSending = false;
+
+        statusBox.className =
+          "mb-6 p-3.5 rounded-2xl bg-rose-50 border " +
+          "border-rose-200 text-rose-800 text-sm font-medium";
+
+        statusText.textContent = message;
+
+        photoInput.value = "";
+        setUploadEnabled(Boolean(conn && conn.open));
+      }
+
+      function showSent() {
+        if (sessionEnded) return;
+
+        clearTimeout(receiptTimer);
+        photoReceived = true;
+        isSending = false;
+
+        photoInput.value = "";
+        setUploadEnabled(false);
+
+        uploadArea.classList.add("hidden");
+        sentArea.classList.remove("hidden");
+        statusBox.classList.add("hidden");
+      }
+
+      function finishExperience() {
+        if (sessionEnded) return;
+
+        sessionEnded = true;
+        clearTimeout(receiptTimer);
+
+        photoInput.value = "";
+        setUploadEnabled(false);
+
+        // 先に終了案内へ切り替え、閉じられない場合も残します。
+        mobileView.classList.add("hidden");
+        finishedView.classList.remove("hidden");
+        document.title = "体験終了";
+
+        // スマートフォン側の接続のみ終了します。
+        // タブレット側で受信済みの写真は削除しません。
+        try {
+          if (conn) conn.close();
+        } catch (error) {}
+
+        try {
+          mobilePeer.destroy();
+        } catch (error) {}
+
+        tryCloseWindow();
+      }
+
+      mobilePeer.on("open", () => {
+        if (sessionEnded) return;
+
+        conn = mobilePeer.connect(targetPeerId, {
+          reliable: true
         });
 
-        conn.on('close', () => {
-          statusBox.className = 'mb-6 p-3.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-600 text-sm font-medium flex items-center justify-center gap-2';
-          statusText.textContent = '부스 세션이 종료되었습니다.';
-          uploadArea.classList.add('opacity-50', 'pointer-events-none');
+        conn.on("open", () => {
+          if (sessionEnded) return;
+
+          statusBox.className =
+            "mb-6 p-3.5 rounded-2xl bg-emerald-50 border " +
+            "border-emerald-200 text-emerald-800 text-sm font-bold";
+
+          statusText.textContent =
+            "태블릿과 연결되었습니다! 사진을 선택하세요";
+
+          setUploadEnabled(true);
+        });
+
+        conn.on("data", (payload) => {
+          if (
+            payload &&
+            payload.type === "PHOTO_RECEIVED"
+          ) {
+            showSent();
+          }
+        });
+
+        conn.on("close", () => {
+          if (sessionEnded || photoReceived) return;
+
+          showError(
+            "부스 연결이 종료되었습니다. 태블릿의 QR을 다시 스캔해 주세요."
+          );
+
+          setUploadEnabled(false);
+        });
+
+        conn.on("error", () => {
+          showError(
+            "사진 전송 중 연결 오류가 발생했습니다. 연결 상태를 확인해 주세요."
+          );
         });
       });
 
-      photoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file || !conn || !conn.open) return;
+      mobilePeer.on("error", () => {
+        showError(
+          "태블릿에 연결할 수 없습니다. 인터넷 연결을 확인하고 최신 QR을 다시 스캔해 주세요."
+        );
+      });
 
-        statusText.textContent = '사진을 전송하는 중...';
+      photoInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+
+        if (
+          !file ||
+          !conn ||
+          !conn.open ||
+          sessionEnded ||
+          isSending ||
+          photoReceived
+        ) {
+          return;
+        }
+
+        isSending = true;
+        setUploadEnabled(false);
+
+        statusText.textContent = "사진을 준비하는 중...";
 
         const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_SIZE = 1600;
-            let width = img.width;
-            let height = img.height;
 
-            if (width > height && width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            } else if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-            conn.send({
-              type: 'PHOTO',
-              name: file.name,
-              dataUrl: canvas.toDataURL('image/jpeg', 0.92)
-            });
-
-            uploadArea.classList.add('hidden');
-            sentArea.classList.remove('hidden');
-            statusBox.classList.add('hidden');
-          };
-          img.src = event.target.result;
+        reader.onerror = () => {
+          showError("사진을 읽지 못했습니다. 다시 선택해 주세요.");
         };
+
+        reader.onload = (readEvent) => {
+          if (sessionEnded) return;
+
+          const img = new Image();
+
+          img.onerror = () => {
+            showError(
+              "이 사진을 열 수 없습니다. JPG 또는 PNG 사진을 선택해 주세요."
+            );
+          };
+
+          img.onload = () => {
+            if (sessionEnded) return;
+
+            let canvas = null;
+
+            try {
+              if (!conn || !conn.open) {
+                throw new Error("연결 종료");
+              }
+
+              const MAX_SIZE = 1600;
+              const scale = Math.min(
+                1,
+                MAX_SIZE / Math.max(img.width, img.height)
+              );
+
+              canvas = document.createElement("canvas");
+              canvas.width = Math.max(1, Math.round(img.width * scale));
+              canvas.height = Math.max(1, Math.round(img.height * scale));
+
+              const context = canvas.getContext("2d");
+
+              if (!context) {
+                throw new Error("이미지 처리 실패");
+              }
+
+              // 투명 이미지의 배경은 흰색으로 처리합니다.
+              context.fillStyle = "#ffffff";
+              context.fillRect(0, 0, canvas.width, canvas.height);
+              context.drawImage(
+                img,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+
+              const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+              statusText.textContent =
+                "사진 전송 중... 태블릿의 수신을 확인하고 있습니다.";
+
+              receiptTimer = setTimeout(() => {
+                showError(
+                  "수신 확인이 지연되고 있습니다. 태블릿 화면을 먼저 확인해 주세요."
+                );
+              }, 45000);
+
+              conn.send({
+                type: "PHOTO",
+                name: file.name,
+                dataUrl: dataUrl
+              });
+            } catch (error) {
+              showError(
+                "사진을 전송하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요."
+              );
+            } finally {
+              img.onload = null;
+              img.onerror = null;
+              img.src = "";
+
+              if (canvas) {
+                canvas.width = 0;
+                canvas.height = 0;
+              }
+            }
+          };
+
+          img.src = readEvent.target.result;
+        };
+
         reader.readAsDataURL(file);
       });
 
-      // 스마트폰 브라우저 창 닫기 시도 (브라우저 정책상 안 닫히면 빈 화면으로 처리)
-      document.getElementById('btn-close-app').addEventListener('click', () => {
-        try {
-          window.close();
-        } catch (e) {}
-        // 창이 안 닫히는 모바일 브라우저 환경을 대비해 빈 화면으로 비우고 안내 문구 출력
-        document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center; color:#555;"><h2>체험이 완료되었습니다. 창을 닫아주세요! 👋</h2></div>';
-      });
+      document
+        .getElementById("btn-close-app")
+        .addEventListener("click", finishExperience);
     }
   </script>
 </body>
