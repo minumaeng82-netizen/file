@@ -172,9 +172,10 @@
           앞에 있는 태블릿 화면을 보며<br/>나만의 스티커를 꾸며보세요.
         </p>
 
-        <!-- 세션 종료 후 다시 시작 버튼 -->
-        <button id="btn-restart" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-3 px-5 rounded-2xl shadow-md transition">
-          🔄 처음부터 다시 시작하기
+        <!-- 첫 화면(태블릿 QR 스캔 화면)으로 돌아가는 버튼 -->
+        <button id="btn-home" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-3.5 px-5 rounded-2xl shadow-md transition flex items-center justify-center gap-2">
+          <span>📱</span>
+          <span>부스 QR코드 스캔 화면으로 돌아가기</span>
         </button>
       </div>
 
@@ -426,13 +427,10 @@
         reader.readAsDataURL(file);
       });
 
-      // 처음부터 다시 시작하기 버튼 (브라우저 창을 닫거나 새로고침하여 앱 종료/초기화 효과)
-      document.getElementById('btn-restart').addEventListener('click', () => {
-        try {
-          window.close(); // 모바일 브라우저 환경에 따라 닫힐 수 있음
-        } catch (e) {}
-        // 창이 안 닫히는 경우 아예 빈 페이지로 이동시켜 앱이 종료된 것처럼 처리
-        window.location.href = 'about:blank';
+      // 부스 QR 스캔 첫 화면(URL의 ?target 파라미터가 없는 상태)으로 이동
+      document.getElementById('btn-home').addEventListener('click', () => {
+        const baseUrl = window.location.href.split('?')[0];
+        window.location.href = baseUrl;
       });
     }
   </script>
